@@ -51,7 +51,7 @@ nav{overflow-y:auto;flex:1;padding:8px 0 24px}
 .part h2{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--white);padding:4px 24px 6px}
 .part ol{list-style:none}
 .part button{display:grid;grid-template-columns:34px 1fr;gap:6px;width:100%;text-align:left;background:none;border:0;color:var(--mist);padding:6px 24px;font-size:14px;cursor:pointer;line-height:1.35}
-.part button span:first-child{color:var(--silver);font-variant-numeric:tabular-nums}
+.part button span:first-child{color:var(--silver);font-variant-numeric:lining-nums tabular-nums}
 .part button:hover{background:var(--graphite-2)}
 .part button[aria-current="true"]{background:var(--part);color:var(--white)}
 .part button[aria-current="true"] span:first-child{color:rgba(255,255,255,.72)}
@@ -150,7 +150,7 @@ details.part summary:hover{background:var(--graphite-2)}
 .toc h4{font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:4px;color:var(--part);padding-bottom:5px;border-bottom:2px solid var(--part)}
 .toc ol{list-style:none}
 .toc button{display:grid;grid-template-columns:34px 1fr;width:100%;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;font-size:15px;color:var(--ink)}
-.toc button span{color:var(--part);font-variant-numeric:tabular-nums}
+.toc button span{color:var(--part);font-variant-numeric:lining-nums tabular-nums}
 .toc button:hover{color:var(--part)}
 
 /* six rounds, as a sequence */
@@ -236,6 +236,9 @@ textarea.short{min-height:90px}
   aside,.topbar,.player,.voice-note,.practice,.pager{display:none!important}
   .shell{display:block}.text{border:0;padding:0}.text.hidden-text{display:block}
 }
+/* Standard-height numerals everywhere (Cormorant Garamond defaults to old-style figures, where 1 looks like I) */
+*{font-variant-numeric:lining-nums;font-feature-settings:"lnum" 1}
+.part button span:first-child,.toc button span{font-feature-settings:"lnum" 1,"tnum" 1}
 </style>
 </head>
 <body>

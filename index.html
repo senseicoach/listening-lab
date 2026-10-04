@@ -274,6 +274,7 @@ del{color:var(--extra);text-decoration:line-through}
 .startlist small{color:var(--muted);font-size:13.5px}
 .startlist .lv{font-size:12.5px;font-weight:700;color:var(--gold);text-align:right}
 .startlist .ck{color:var(--gold);font-weight:700}
+.cats{margin-top:20px;padding-top:14px;border-top:1px solid rgba(127,127,127,.35)}.cats h4{margin:0 0 6px;font-size:17px}.cats ol{margin:8px 0 0;padding-left:26px}.cats li{margin:4px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -536,11 +537,11 @@ function utter(text, sp) {
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const roleName = () => { const s = ALL.find(x => x.num === ST.num); return ((s && s.lines.find(l => l[0] === "S")) || [])[2] || ""; };
 let REC = null;
-function playSeg(k, flow, lead) {
+function playSeg(k, flow) {
   const T = ALL.find(x => x.num === ST.num).t, a = REC; if (!a || !T) return Promise.resolve();
   const end = flow && k + 1 < T.length ? T[k + 1][0] : T[k][1] + 0.05, id = RUN;
-  const from = lead ? 0 : T[k][0];
   a.playbackRate = +PREF.arate;
+  const from = flow && k === 0 ? 0 : T[k][0];
   if (a.paused || Math.abs(a.currentTime - from) > 0.4) a.currentTime = from;
   return new Promise(res => {
     const tick = () => { if (id !== RUN || a.ended) { res(); return; } if (a.currentTime >= end) { if (!flow) a.pause(); res(); return; } requestAnimationFrame(tick); };
@@ -571,7 +572,7 @@ async function playFrom(start, { echo = false, only = false } = {}) {
     const mine = echo && ST.roleplay && g.name === roleName();
     const T = ST.hasAudio && ALL.find(x => x.num === ST.num).t, flow = ST.hasAudio && !echo && !only;
     if (mine) { status(k, "your line, say it now"); await wait(T ? (T[k][1] - T[k][0]) * 1000 / +PREF.arate + 1200 : g.t.split(" ").length * 470 / +PREF.rate + 900); }
-    else if (ST.hasAudio) await playSeg(k, flow, k === 0 && !only);
+    else if (ST.hasAudio) await playSeg(k, flow);
     else await utter(g.t, g.sp);
     if (id !== RUN) return;
     if (echo && !mine) { status(k, "your turn, repeat it"); await wait(T ? (T[k][1] - T[k][0]) * 1000 * +PREF.gap / +PREF.arate + 700 : g.t.split(" ").length * 380 * +PREF.gap / +PREF.rate + 700); }
@@ -636,7 +637,7 @@ function renderPanel(s) {
     ${playerHTML()}${answerBox}${nextRow(k)}`;
   if (k === 3) P.innerHTML = `<h3>Round 4: Compare</h3>
     <p class="hint">Check your transcription against the text. Look at the words you missed. Were they small words? Words linked together? New words you didn't know?</p>
-    ${answerBox}<div class="actions"><button class="btn gold" id="check">Check my transcription</button></div><div id="result"></div>${nextRow(k)}`;
+    ${answerBox}<div class="actions"><button class="btn gold" id="check">Check my transcription</button></div><div id="result"></div><div class="cats"><h4>Why did you miss it?</h4><p class="hint">For each word or phrase you missed, decide which kind of mistake it was. Over time, this shows you what to practise.</p><ol type="A"><li><b>New vocabulary:</b> you didn't know the word.</li><li><b>Known word, not recognized:</b> you know it when you read it, but you didn't hear it.</li><li><b>Connected speech:</b> words were linked or shortened, like “wanna” or “gotta.”</li><li><b>Small words:</b> you missed little words like “a,” “the,” “to” or “of.”</li><li><b>Meaning:</b> you heard every word, but misunderstood what the person meant.</li></ol></div>${nextRow(k)}`;
   if (k === 4) P.innerHTML = `<h3>Round 5: Shadow</h3>
     <p class="hint">Now the text is visible. Follow the highlight while the voices speak, and tap any sentence to hear it from there. Then play it again and speak along with the voices, at the same time, copying their rhythm and the small words.</p>
     ${playerHTML({ resume: false })}${dialogueHTML(s, true)}

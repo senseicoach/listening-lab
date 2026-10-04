@@ -275,6 +275,7 @@ del{color:var(--extra);text-decoration:line-through}
 .startlist .lv{font-size:12.5px;font-weight:700;color:var(--gold);text-align:right}
 .startlist .ck{color:var(--gold);font-weight:700}
 .cats{margin-top:20px;padding-top:14px;border-top:1px solid rgba(127,127,127,.35)}.cats h4{margin:0 0 6px;font-size:17px}.cats ol{margin:8px 0 0;padding-left:26px}.cats li{margin:4px 0;line-height:1.5}
+#yourturn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;background:#F2C14E;color:#2a2100;padding:12px 22px 14px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.28);font-size:18px;min-width:min(320px,90vw);text-align:center}#yourturn .yt-bar{display:block;height:5px;background:rgba(0,0,0,.15);border-radius:3px;margin-top:9px;overflow:hidden}#yourturn .yt-bar i{display:block;height:100%;width:100%;background:#2a2100;animation:ytshrink linear forwards}@keyframes ytshrink{from{width:100%}to{width:0}}.rp-note{font-weight:400;opacity:.75}
 </style>
 </head>
 <body>
@@ -465,7 +466,7 @@ function playerHTML(opts) {
         <span class="nowline" id="nowline" aria-live="polite">Ready. ${ST.segs.length} sentences.</span>
       </div>
       ${lines ? `<div class="deck-row"><button class="btn secondary" id="sprev">Previous sentence</button><button class="btn" id="splay"></button><button class="btn secondary" id="snext">Next sentence</button></div>` : ""}
-      ${echo ? `<div class="deck-row"><label>Pause after each sentence <select id="gap"><option value="1">Short</option><option value="1.4">Medium</option><option value="2">Long</option></select></label>${dlg ? `<label class="check"><input type="checkbox" id="roleplay" ${ST.roleplay ? "checked" : ""}> I'll say ${esc(roleName())}'s lines</label>` : ""}</div>` : ""}
+      ${echo ? `<div class="deck-row"><label>Pause after each sentence <select id="gap"><option value="1">Short</option><option value="1.4">Medium</option><option value="2">Long</option></select></label>${dlg ? `<label class="check"><input type="checkbox" id="roleplay" ${ST.roleplay ? "checked" : ""}> I'll say ${esc(roleName())}'s lines <span class="rp-note">(that voice goes quiet and you speak)</span></label>` : ""}</div>` : ""}
       <div class="deck-row">
         ${rec ? `<button class="btn secondary" id="back10">Back 10 seconds</button><span class="nowline">Recorded voices, a different one for each person.</span>` : `<label>Voice 1 <select id="pv"></select></label><label>Voice 2 <select id="sv"></select></label>`}
         <label class="sp">Speed <select id="${rec ? "arate" : "rate"}">${rec ? `<option value="0.75">Slow</option><option value="0.9">A little slow</option><option value="1">Natural</option>` : `<option value="0.65">Very slow</option><option value="0.8">Slow</option><option value="0.9">A little slow</option><option value="1">Natural</option>`}</select></label>
@@ -561,6 +562,13 @@ function status(k, extra) {
   if (nl && g) nl.innerHTML = `<b>${esc(g.name)}</b> · sentence ${k + 1} of ${ST.segs.length}${extra ? ` · ${extra}` : ""}`;
   if (trk) trk.style.width = `${((k + 1) / ST.segs.length) * 100}%`;
 }
+function showTurn(ms) {
+  let el = document.getElementById("yourturn");
+  if (!ms) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement("div"); el.id = "yourturn"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.innerHTML = '<strong>Your turn:</strong> say this line now<span class="yt-bar"><i></i></span>';
+  el.querySelector("i").style.animationDuration = ms + "ms";
+}
 async function playFrom(start, { echo = false, only = false } = {}) {
   if (!ST.hasAudio && !("speechSynthesis" in window)) return;
   if ("speechSynthesis" in window) speechSynthesis.cancel();
@@ -571,7 +579,7 @@ async function playFrom(start, { echo = false, only = false } = {}) {
     const g = ST.segs[k]; ST.seg = k; highlight(k); status(k); updSeg();
     const mine = echo && ST.roleplay && g.name === roleName();
     const T = ST.hasAudio && ALL.find(x => x.num === ST.num).t, flow = ST.hasAudio && !echo && !only;
-    if (mine) { status(k, "your line, say it now"); await wait(T ? (T[k][1] - T[k][0]) * 1000 / +PREF.arate + 1200 : g.t.split(" ").length * 470 / +PREF.rate + 900); }
+    if (mine) { status(k, "your line, say it now"); const ms = T ? (T[k][1] - T[k][0]) * 1000 / +PREF.arate + 1200 : g.t.split(" ").length * 470 / +PREF.rate + 900; showTurn(ms); await wait(ms); showTurn(0); }
     else if (ST.hasAudio) await playSeg(k, flow);
     else await utter(g.t, g.sp);
     if (id !== RUN) return;
@@ -582,7 +590,7 @@ async function playFrom(start, { echo = false, only = false } = {}) {
   if (id === RUN) { setPlaying(false); highlight(-1); const nl = $("#nowline"); if (nl) nl.textContent = only ? `Sentence ${ST.seg + 1} of ${ST.segs.length}. Play it again or go to the next one.` : "Finished. Press Play to hear it again."; }
 }
 function setPlaying(on) { const p = $("#play"); if (p) p.textContent = on ? "Playing…" : "Play"; }
-function stopAll() {
+function stopAll() { showTurn(0);
   RUN++;
   if ("speechSynthesis" in window) speechSynthesis.cancel();
   if (REC) REC.pause();
